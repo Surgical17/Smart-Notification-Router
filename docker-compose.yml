@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  smart-notification-router:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notification-router
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=file:/app/data/db.sqlite
+      - AUTH_SECRET=${AUTH_SECRET:-your-secret-change-in-production}
+      - AUTH_URL=http://localhost:3000
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Optional: Apprise API service (if you prefer API over CLI)
+  # apprise-api:
+  #   image: caronc/apprise:latest
+  #   container_name: apprise-api
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./apprise-config:/config
+  #   environment:
+  #     - APPRISE_STATELESS_URLS=gotify://host/token

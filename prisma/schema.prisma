@@ -1,0 +1,82 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                   String               @id @default(cuid())
+  email                String               @unique
+  password             String
+  name                 String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  webhooks             Webhook[]
+  notificationChannels NotificationChannel[]
+}
+
+model Webhook {
+  id          String       @id @default(cuid())
+  name        String
+  uniqueUrl   String       @unique @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled     Boolean      @default(true)
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  rules       Rule[]
+  logs        WebhookLog[]
+}
+
+model Rule {
+  id            String    @id @default(cuid())
+  webhookId     String
+  webhook       Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  name          String
+  conditions    String    // JSON string storing condition configuration
+  actions       String    // JSON string storing action configuration
+  priority      Int       @default(0)
+  enabled       Boolean   @default(true)
+  debounceMs    Int       @default(0) // Debounce in milliseconds
+  lastTriggered DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model NotificationChannel {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  type      String   // gotify, email, telegram, discord, slack, apprise_url, webhook
+  config    String   // JSON string storing channel-specific configuration
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WebhookLog {
+  id               String   @id @default(cuid())
+  webhookId        String
+  webhook          Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  timestamp        DateTime @default(now())
+  payload          String   // JSON string of the received payload
+  ruleTriggered    String?  // Rule ID that was triggered (null if no rule matched)
+  notificationSent Boolean  @default(false)
+  status           String   // success, failed, skipped, no_match
+  errorMessage     String?
+  responseTime     Int?     // Response time in milliseconds
+}
+
+model ServerState {
+  id         String   @id @default(cuid())
+  serverName String   @unique
+  isOnline   Boolean  @default(false)
+  lastSeen   DateTime @default(now())
+  metadata   String?  // JSON string for additional metadata
+  updatedAt  DateTime @updatedAt
+}
