@@ -133,7 +133,7 @@ function isConditionGroup(item: Condition | ConditionGroup): item is ConditionGr
 }
 
 // Evaluate a condition group (recursive)
-async function evaluateConditionGroup(
+export async function evaluateConditionGroup(
   group: ConditionGroup,
   payload: Record<string, unknown>
 ): Promise<boolean> {

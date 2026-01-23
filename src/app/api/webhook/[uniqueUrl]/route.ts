@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { evaluateRule, isRuleDebounced, updateRuleLastTriggered, updateServerState } from "@/lib/rule-engine";
 import { dispatchNotifications } from "@/lib/notification-dispatcher";
+import { processCorrelations } from "@/lib/correlation-engine";
+import { processFieldCorrelations } from "@/lib/field-correlation-engine";
 import { ConditionGroup, RuleAction } from "@/lib/validations/webhook";
 
 interface RouteParams {
@@ -70,10 +72,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       await updateServerState(serverName, isOnline, payload as Record<string, unknown>);
     }
 
+    // Process field correlations (runs asynchronously, doesn't block immediate rules)
+    processFieldCorrelations(webhook.id, payload).catch((error) => {
+      console.error("Error processing field correlations:", error);
+    });
+
     let ruleTriggered: string | null = null;
     let notificationSent = false;
     let status = "no_match";
     let errorMessage: string | null = null;
+    const triggeredRules: string[] = [];
+
+    // Get match mode from webhook (default to first_match for backwards compatibility)
+    const matchMode = webhook.matchMode || "first_match";
 
     // Evaluate rules in priority order
     for (const rule of webhook.rules) {
@@ -82,13 +93,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         const ruleMatches = await evaluateRule(conditions, payload);
 
         if (ruleMatches) {
-          ruleTriggered = rule.id;
-
           // Check debounce
           const isDebounced = await isRuleDebounced(rule.id, rule.debounceMs);
           if (isDebounced) {
+            // In all_matches mode, skip this rule but continue checking others
+            if (matchMode === "all_matches") {
+              continue;
+            }
+            // In first_match mode, stop here
             status = "skipped";
             errorMessage = "Rule debounced";
+            ruleTriggered = rule.id;
             break;
           }
 
@@ -99,26 +114,53 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           // Update last triggered time
           await updateRuleLastTriggered(rule.id);
 
+          // Track this triggered rule
+          triggeredRules.push(rule.id);
+
           // Check results
           const successfulNotifications = results.filter((r) => r.success);
-          notificationSent = successfulNotifications.length > 0;
+          const ruleNotificationSent = successfulNotifications.length > 0;
 
-          if (notificationSent) {
-            status = "success";
+          if (ruleNotificationSent) {
+            notificationSent = true;
+            if (status !== "failed") {
+              status = "success";
+            }
           } else {
             status = "failed";
-            errorMessage = results.map((r) => r.error).filter(Boolean).join("; ");
+            const ruleErrors = results.map((r) => r.error).filter(Boolean).join("; ");
+            errorMessage = errorMessage ? `${errorMessage}; ${ruleErrors}` : ruleErrors;
           }
 
-          // Stop after first matching rule
-          break;
+          // In first_match mode, stop after first matching rule
+          if (matchMode === "first_match") {
+            ruleTriggered = rule.id;
+            break;
+          }
         }
       } catch (error) {
         console.error(`Error evaluating rule ${rule.id}:`, error);
         status = "failed";
-        errorMessage = error instanceof Error ? error.message : "Rule evaluation error";
+        const ruleError = error instanceof Error ? error.message : "Rule evaluation error";
+        errorMessage = errorMessage ? `${errorMessage}; ${ruleError}` : ruleError;
+
+        // In first_match mode, stop on error
+        if (matchMode === "first_match") {
+          ruleTriggered = rule.id;
+          break;
+        }
       }
     }
+
+    // Set ruleTriggered based on match mode
+    if (matchMode === "all_matches" && triggeredRules.length > 0) {
+      ruleTriggered = triggeredRules.join(",");
+    }
+
+    // Process correlation rules (runs asynchronously, doesn't block response)
+    processCorrelations(webhook.id, payload, webhook.user.id).catch((error) => {
+      console.error("Error processing correlations:", error);
+    });
 
     // Log the webhook
     const responseTime = Date.now() - startTime;

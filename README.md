@@ -1,183 +1,149 @@
 # Smart Notification Router
 
-A full-stack notification routing application that receives webhooks from monitoring systems, applies conditional logic rules, and sends notifications to external services via Apprise.
+A powerful, self-hosted notification routing system built with Next.js 16, featuring intelligent rule-based routing, field correlation, and multi-channel delivery.
 
-## Features
+## ✨ Features
 
-- **Webhook Management**: Create unique webhook endpoints to receive notifications from monitoring systems (Uptime Kuma, etc.)
-- **Conditional Rule Engine**: Define complex routing rules with AND/OR logic, field comparisons, and server state tracking
-- **Multi-Channel Notifications**: Support for Gotify, Telegram, Discord, Slack, Email (SMTP), and custom webhooks
-- **Apprise Integration**: 90+ notification services supported via Apprise
-- **Dashboard**: Real-time overview of webhooks, notifications, and logs
-- **Debouncing**: Prevent notification spam with configurable debounce times
-- **Docker Ready**: Easy deployment with Docker and Docker Compose
+- **🔀 Intelligent Routing**: Dynamic rule-based notification routing with AND/OR logic
+- **⏱️ Field Correlation**: Track and correlate notifications across multiple sources within time windows
+- **📡 Multi-Channel Support**: Gotify, Discord, Slack, Telegram, Email, Apprise, and custom webhooks
+- **🎯 Unified Rule System**:
+  - Immediate rules for instant triggers
+  - Correlation rules for multi-source verification
+- **📊 Comprehensive Logging**: Track all webhook requests and rule triggers
+- **🔐 Secure Authentication**: Single-user mode with Auth.js v5
+- **🐳 Docker Ready**: Full Docker and Docker Compose support
+- **⚡ High Performance**: Built on Next.js 16 with Turbopack
 
-## Tech Stack
+## 🚀 Quick Start
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Database**: SQLite with Prisma ORM
-- **Authentication**: Auth.js v5
-- **UI**: shadcn/ui + Tailwind CSS
-- **Notifications**: Apprise
+### Docker (Recommended)
 
-## Quick Start
-
-### Prerequisites
-
-- Node.js 20+
-- npm or yarn
-
-### Development Setup
-
-1. Clone the repository:
 ```bash
-git clone <your-repo-url>
+# Clone the repository
+git clone https://github.com/yourusername/smartnotificationrouter.git
 cd smartnotificationrouter
-```
 
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up environment variables:
-```bash
+# Create environment file
 cp .env.example .env
+# Edit .env and set AUTH_SECRET (generate with: openssl rand -base64 32)
+
+# Start with Docker Compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
 ```
 
-4. Initialize the database:
+The application will be available at `http://localhost:3000`
+
+### Local Development
+
 ```bash
+# Install dependencies
+npm install
+
+# Setup database
 npx prisma generate
 npx prisma db push
-```
 
-5. Start the development server:
-```bash
+# Run development server
 npm run dev
 ```
 
-6. Open [http://localhost:3000](http://localhost:3000) and create an account.
+## 📖 Documentation
 
-### Docker Deployment
+- **[Setup Guide](./SETUP_GUIDE.md)** - Detailed setup instructions
+- **[Deployment Guide](./DEPLOYMENT.md)** - Production deployment with Docker and GitHub Actions
+- **[Features](./FEATURES.md)** - Complete feature documentation
+- **[Changelog](./CHANGELOG.md)** - Version history and changes
 
-1. Build and run with Docker Compose:
-```bash
-docker-compose up -d
-```
+## 🔧 Configuration
 
-2. Or build manually:
-```bash
-docker build -t notification-router .
-docker run -p 3000:3000 -v ./data:/app/data notification-router
-```
+### First-Time Setup
 
-## Configuration
+1. Navigate to `http://localhost:3000/register`
+2. Create your admin account (only one user allowed)
+3. Login and start creating webhooks and rules
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | SQLite database path | `file:./dev.db` |
-| `AUTH_SECRET` | Secret for session encryption | (required) |
-| `AUTH_URL` | Application URL | `http://localhost:3000` |
+```env
+# Database
+DATABASE_URL=file:./prisma/dev.db
 
-### Generating AUTH_SECRET
+# Authentication (REQUIRED)
+AUTH_SECRET=your-secret-key-here
+AUTH_URL=http://localhost:3000
 
-```bash
-openssl rand -base64 32
+# Node Environment
+NODE_ENV=development
 ```
 
-## Usage
+## 🎯 Use Cases
 
-### 1. Create a Webhook
+### Server Monitoring
+Receive alerts only when multiple monitoring systems confirm an issue:
+- Nagios reports down → wait
+- Zabbix confirms → wait
+- Prometheus confirms → **ALERT!**
 
-Navigate to **Webhooks** and create a new webhook. You'll get a unique URL like:
+### Multi-Region Deployment Tracking
+Track deployments across regions and alert when all complete:
+- US-East deployed → wait
+- EU-West deployed → wait
+- AP-Southeast deployed → **SUCCESS!**
+
+### Distributed System Health
+Correlate health checks from multiple services:
+- Database healthy → wait
+- Cache healthy → wait
+- API healthy → **ALL SYSTEMS GO!**
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 16 (App Router), React 19, TailwindCSS, shadcn/ui
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Database**: SQLite (default), PostgreSQL compatible
+- **Authentication**: Auth.js v5 (NextAuth)
+- **Notifications**: Apprise CLI, Direct integrations
+- **Deployment**: Docker, Docker Compose
+
+## 📊 Architecture
+
 ```
-https://your-domain.com/api/webhook/abc123xyz
-```
-
-### 2. Add Notification Channels
-
-Go to **Channels** and add your notification destinations:
-- **Gotify**: Server URL + App Token
-- **Telegram**: Bot Token + Chat ID
-- **Discord**: Webhook URL
-- **Slack**: Webhook URL
-- **Email**: SMTP settings
-
-### 3. Create Routing Rules
-
-On the webhook detail page, create rules with:
-- **Conditions**: Define when the rule triggers (e.g., `status equals "down"`)
-- **Actions**: Select channels and customize the notification message
-- **Debounce**: Prevent duplicate notifications
-
-### Example Rule
-
-```json
-{
-  "conditions": {
-    "logic": "AND",
-    "conditions": [
-      {"field": "status", "operator": "equals", "value": "down"},
-      {"field": "server", "operator": "contains", "value": "production"}
-    ]
-  },
-  "actions": {
-    "channelIds": ["channel-id-1", "channel-id-2"],
-    "titleTemplate": "Server Alert",
-    "messageTemplate": "Server {{server}} is {{status}}",
-    "priority": "high"
-  }
-}
+Incoming Webhooks
+    ↓
+Rule Engine (Immediate Rules)
+    ↓
+Field Correlation Engine
+    ↓
+Notification Dispatcher
+    ↓
+Multi-Channel Delivery
 ```
 
-### 4. Configure Uptime Kuma
+## 🤝 Contributing
 
-In Uptime Kuma, add a notification with:
-- **Type**: Webhook
-- **URL**: Your webhook URL
-- **Method**: POST
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## API Endpoints
+## 📄 License
 
-### Webhook Receiver
-```
-POST /api/webhook/{uniqueUrl}
-```
-Receives JSON payloads and triggers rule evaluation.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-### Health Check
-```
-GET /api/health
-```
-Returns application health status.
+## 🙏 Acknowledgments
 
-## Template Variables
+- Built with [Next.js](https://nextjs.org/)
+- UI components from [shadcn/ui](https://ui.shadcn.com/)
+- Notifications via [Apprise](https://github.com/caronc/apprise)
 
-Use `{{variable}}` syntax in message templates:
-- `{{server}}` - Server name from payload
-- `{{status}}` - Status value
-- `{{_metadata.receivedAt}}` - Timestamp when webhook was received
-- `{{nested.field.value}}` - Access nested payload fields
+## 📞 Support
 
-## Development
+For issues, questions, or feature requests:
+- Open an issue on [GitHub](https://github.com/yourusername/smartnotificationrouter/issues)
+- Check the [documentation](./FEATURES.md)
 
-```bash
-# Run development server
-npm run dev
+---
 
-# View database (Prisma Studio)
-npx prisma studio
-
-# Run linting
-npm run lint
-
-# Build for production
-npm run build
-```
-
-## License
-
-MIT
+**Version**: 0.52.0
+**Status**: Production Ready 🎉

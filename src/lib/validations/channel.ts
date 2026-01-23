@@ -8,6 +8,7 @@ export const channelTypes = [
   "email",
   "apprise_url",
   "webhook",
+  "smart_router",
 ] as const;
 
 export const channelTypeSchema = z.enum(channelTypes);
@@ -47,6 +48,12 @@ const appriseUrlConfigSchema = z.object({
 
 const webhookConfigSchema = z.object({
   url: z.string().url("Invalid URL"),
+  method: z.enum(["GET", "POST", "PUT", "PATCH"]).optional().default("POST"),
+  headers: z.record(z.string()).optional(),
+});
+
+const smartRouterConfigSchema = z.object({
+  url: z.string().url("Invalid router webhook URL"),
   method: z.enum(["GET", "POST", "PUT", "PATCH"]).optional().default("POST"),
   headers: z.record(z.string()).optional(),
 });
@@ -91,6 +98,9 @@ export function validateChannelConfig(
         break;
       case "webhook":
         webhookConfigSchema.parse(config);
+        break;
+      case "smart_router":
+        smartRouterConfigSchema.parse(config);
         break;
       default:
         return { success: false, error: "Unknown channel type" };

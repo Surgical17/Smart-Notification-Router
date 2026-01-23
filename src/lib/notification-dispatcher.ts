@@ -112,6 +112,7 @@ function buildAppriseUrl(type: string, config: ChannelConfig): string | null {
       break;
 
     case "webhook":
+    case "smart_router":
       if (config.url) {
         const url = new URL(config.url);
         return `json://${url.host}${url.pathname}`;
@@ -259,7 +260,8 @@ async function sendViaHttp(
         return { success: true };
       }
 
-      case "webhook": {
+      case "webhook":
+      case "smart_router": {
         if (!config.url) {
           return { success: false, error: "Missing webhook URL" };
         }

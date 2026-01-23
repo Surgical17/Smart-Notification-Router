@@ -16,6 +16,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -36,9 +43,12 @@ import {
   Settings,
   ScrollText,
   ListFilter,
+  Target,
+  Zap,
+  Network,
 } from "lucide-react";
 import Link from "next/link";
-import { RuleBuilder } from "@/components/rules/rule-builder";
+import { UnifiedRuleBuilder } from "@/components/rules/unified-rule-builder";
 
 interface Rule {
   id: string;
@@ -52,12 +62,29 @@ interface Rule {
   createdAt: string;
 }
 
+interface CorrelationRule {
+  id: string;
+  name: string;
+  correlationField: string;
+  expectedValues: string;
+  timeWindowMs: number;
+  matchConditions: string;
+  successActions: string;
+  timeoutActions: string | null;
+  priority: number;
+  enabled: boolean;
+  debounceMs: number;
+  lastTriggered: string | null;
+  createdAt: string;
+}
+
 interface Webhook {
   id: string;
   name: string;
   uniqueUrl: string;
   description: string | null;
   enabled: boolean;
+  matchMode?: string;
   createdAt: string;
   rules: Rule[];
   _count: {
@@ -87,9 +114,15 @@ export default function WebhookDetailPage({
   const [logs, setLogs] = useState<WebhookLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", description: "" });
+  const [editForm, setEditForm] = useState({
+    name: "",
+    description: "",
+    matchMode: "first_match" as "first_match" | "all_matches"
+  });
   const [isRuleBuilderOpen, setIsRuleBuilderOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<Rule | null>(null);
+  const [correlationRules, setCorrelationRules] = useState<CorrelationRule[]>([]);
+  const [editingCorrelationRule, setEditingCorrelationRule] = useState<CorrelationRule | null>(null);
 
   const fetchWebhook = async () => {
     try {
@@ -100,6 +133,7 @@ export default function WebhookDetailPage({
         setEditForm({
           name: data.name,
           description: data.description || "",
+          matchMode: data.matchMode || "first_match",
         });
       } else if (response.status === 404) {
         router.push("/dashboard/webhooks");
@@ -124,9 +158,22 @@ export default function WebhookDetailPage({
     }
   };
 
+  const fetchCorrelationRules = async () => {
+    try {
+      const response = await fetch(`/api/webhooks/${id}/correlation-rules`);
+      if (response.ok) {
+        const data = await response.json();
+        setCorrelationRules(data);
+      }
+    } catch (error) {
+      console.error("Error fetching correlation rules:", error);
+    }
+  };
+
   useEffect(() => {
     fetchWebhook();
     fetchLogs();
+    fetchCorrelationRules();
   }, [id]);
 
   const handleSave = async () => {
@@ -222,10 +269,27 @@ export default function WebhookDetailPage({
     }
   };
 
+  const handleDeleteCorrelationRule = async (ruleId: string) => {
+    try {
+      const response = await fetch(`/api/correlation-rules/${ruleId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setCorrelationRules((prev) => prev.filter((r) => r.id !== ruleId));
+        toast.success("Correlation rule deleted successfully");
+      }
+    } catch {
+      toast.error("Failed to delete correlation rule");
+    }
+  };
+
   const handleRuleSaved = () => {
     setIsRuleBuilderOpen(false);
     setEditingRule(null);
+    setEditingCorrelationRule(null);
     fetchWebhook();
+    fetchCorrelationRules();
   };
 
   const copyToClipboard = () => {
@@ -281,7 +345,7 @@ export default function WebhookDetailPage({
           </TabsTrigger>
           <TabsTrigger value="rules">
             <ListFilter className="mr-2 h-4 w-4" />
-            Rules ({webhook.rules.length})
+            Rules ({webhook.rules.length + correlationRules.length})
           </TabsTrigger>
           <TabsTrigger value="logs">
             <ScrollText className="mr-2 h-4 w-4" />
@@ -338,6 +402,48 @@ export default function WebhookDetailPage({
                   }
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="matchMode">Rule Matching Mode</Label>
+                <Select
+                  value={editForm.matchMode}
+                  onValueChange={(value: "first_match" | "all_matches") =>
+                    setEditForm({ ...editForm, matchMode: value })
+                  }
+                >
+                  <SelectTrigger id="matchMode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="first_match">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        <div>
+                          <div className="font-medium">First Match</div>
+                          <div className="text-xs text-muted-foreground">
+                            Stop after first matching rule
+                          </div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="all_matches">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        <div>
+                          <div className="font-medium">All Matches</div>
+                          <div className="text-xs text-muted-foreground">
+                            Trigger all matching rules
+                          </div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {editForm.matchMode === "first_match"
+                    ? "Rules are evaluated by priority. Only the first matching rule will trigger."
+                    : "All matching rules will trigger their actions. Useful for multi-team notifications."}
+                </p>
+              </div>
               <Button onClick={handleSave} disabled={isSaving}>
                 <Save className="mr-2 h-4 w-4" />
                 {isSaving ? "Saving..." : "Save Changes"}
@@ -349,7 +455,7 @@ export default function WebhookDetailPage({
         <TabsContent value="rules" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-medium">Routing Rules</h3>
+              <h3 className="text-lg font-medium">Rules</h3>
               <p className="text-sm text-muted-foreground">
                 Rules are evaluated in priority order (highest first)
               </p>
@@ -360,13 +466,13 @@ export default function WebhookDetailPage({
             </Button>
           </div>
 
-          {webhook.rules.length === 0 ? (
+          {webhook.rules.length === 0 && correlationRules.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <ListFilter className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No rules yet</h3>
                 <p className="text-muted-foreground text-center mb-4">
-                  Create rules to define when and how notifications are sent
+                  Create immediate rules for instant triggers or correlation rules for time-based multi-source tracking
                 </p>
                 <Button onClick={() => setIsRuleBuilderOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
@@ -376,14 +482,25 @@ export default function WebhookDetailPage({
             </Card>
           ) : (
             <div className="space-y-4">
-              {webhook.rules.map((rule) => (
-                <Card key={rule.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">{rule.name}</h4>
-                          <Badge variant="outline">Priority: {rule.priority}</Badge>
+              {/* Immediate Rules */}
+              {webhook.rules.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Zap className="h-4 w-4" />
+                    Immediate Rules
+                  </div>
+                  {webhook.rules.map((rule) => (
+                    <Card key={rule.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="default" className="bg-blue-500">
+                                <Zap className="h-3 w-3 mr-1" />
+                                Immediate
+                              </Badge>
+                              <h4 className="font-medium">{rule.name}</h4>
+                              <Badge variant="outline">Priority: {rule.priority}</Badge>
                           {rule.debounceMs > 0 && (
                             <Badge variant="secondary">
                               Debounce: {rule.debounceMs / 1000}s
@@ -448,6 +565,88 @@ export default function WebhookDetailPage({
                   </CardContent>
                 </Card>
               ))}
+                </div>
+              )}
+
+              {/* Correlation Rules */}
+              {correlationRules.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Network className="h-4 w-4" />
+                    Correlation Rules
+                  </div>
+                  {correlationRules.map((rule) => (
+                    <Card key={rule.id}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="default" className="bg-purple-500">
+                                <Network className="h-3 w-3 mr-1" />
+                                Correlation
+                              </Badge>
+                              <h4 className="font-medium">{rule.name}</h4>
+                              <Badge variant="outline">Priority: {rule.priority}</Badge>
+                              {!rule.enabled && (
+                                <Badge variant="secondary">Disabled</Badge>
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <p>
+                                <strong>Field:</strong> {rule.correlationField} |
+                                <strong> Values:</strong> {JSON.parse(rule.expectedValues).join(", ")}
+                              </p>
+                              <p>
+                                <strong>Time Window:</strong> {rule.timeWindowMs / 60000} minutes
+                              </p>
+                              {rule.lastTriggered && (
+                                <p>
+                                  Last triggered: {new Date(rule.lastTriggered).toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditingCorrelationRule(rule);
+                                setIsRuleBuilderOpen(true);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Delete Correlation Rule</DialogTitle>
+                                  <DialogDescription>
+                                    Are you sure you want to delete this correlation rule? This action cannot be undone.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => handleDeleteCorrelationRule(rule.id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
@@ -467,44 +666,79 @@ export default function WebhookDetailPage({
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {logs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="flex items-start justify-between border-b pb-4 last:border-0"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={
-                              log.status === "success"
-                                ? "default"
-                                : log.status === "failed"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                          >
-                            {log.status}
-                          </Badge>
-                          {log.notificationSent && (
-                            <Badge variant="outline">Notification sent</Badge>
-                          )}
-                          {log.responseTime && (
-                            <span className="text-xs text-muted-foreground">
-                              {log.responseTime}ms
-                            </span>
-                          )}
+                  {logs.map((log) => {
+                    let payload: any = {};
+                    try {
+                      payload = JSON.parse(log.payload);
+                    } catch {
+                      // Ignore parse errors
+                    }
+
+                    return (
+                      <div
+                        key={log.id}
+                        className="border rounded-lg p-4 space-y-2"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge
+                                variant={
+                                  log.status === "success"
+                                    ? "default"
+                                    : log.status === "failed"
+                                    ? "destructive"
+                                    : "secondary"
+                                }
+                              >
+                                {log.status}
+                              </Badge>
+                              {log.notificationSent && (
+                                <Badge variant="outline" className="bg-green-50">
+                                  Notification sent
+                                </Badge>
+                              )}
+                              {log.ruleTriggered && (
+                                <Badge variant="outline">
+                                  Rule: {log.ruleTriggered}
+                                </Badge>
+                              )}
+                              {log.responseTime && (
+                                <span className="text-xs text-muted-foreground">
+                                  {log.responseTime}ms
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(log.timestamp).toLocaleString()}
+                            </p>
+                            {log.errorMessage && (
+                              <p className="text-sm text-destructive">
+                                {log.errorMessage}
+                              </p>
+                            )}
+                            {log.status === "no_match" && (
+                              <p className="text-sm text-muted-foreground">
+                                No immediate rules matched. Check correlation rules if enabled.
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(log.timestamp).toLocaleString()}
-                        </p>
-                        {log.errorMessage && (
-                          <p className="text-sm text-destructive">
-                            {log.errorMessage}
-                          </p>
+
+                        {/* Payload Preview */}
+                        {Object.keys(payload).length > 0 && payload._metadata && (
+                          <details className="text-xs">
+                            <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                              View payload
+                            </summary>
+                            <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto max-h-40">
+                              {JSON.stringify(payload, null, 2)}
+                            </pre>
+                          </details>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -516,19 +750,21 @@ export default function WebhookDetailPage({
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingRule ? "Edit Rule" : "Create Rule"}
+              {editingRule || editingCorrelationRule ? "Edit Rule" : "Create Rule"}
             </DialogTitle>
             <DialogDescription>
-              Define conditions and actions for this routing rule
+              Build dynamic rules with immediate triggers or field-based correlations
             </DialogDescription>
           </DialogHeader>
-          <RuleBuilder
+          <UnifiedRuleBuilder
             webhookId={webhook.id}
             rule={editingRule}
+            correlationRule={editingCorrelationRule}
             onSave={handleRuleSaved}
             onCancel={() => {
               setIsRuleBuilderOpen(false);
               setEditingRule(null);
+              setEditingCorrelationRule(null);
             }}
           />
         </DialogContent>

@@ -18,7 +18,17 @@ export async function POST(request: NextRequest) {
 
     const { name, email, password } = parsed.data;
 
-    // Check if user already exists
+    // Check if any user exists (only allow first user registration)
+    const userCount = await prisma.user.count();
+
+    if (userCount > 0) {
+      return NextResponse.json(
+        { error: "Registration is closed. Only one user is allowed." },
+        { status: 403 }
+      );
+    }
+
+    // Check if user already exists (redundant but kept for clarity)
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });

@@ -4,12 +4,14 @@ export const createWebhookSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
   description: z.string().max(500, "Description must be less than 500 characters").optional(),
   enabled: z.boolean().optional().default(true),
+  matchMode: z.enum(["first_match", "all_matches"]).optional().default("first_match"),
 });
 
 export const updateWebhookSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters").optional(),
   description: z.string().max(500, "Description must be less than 500 characters").optional().nullable(),
   enabled: z.boolean().optional(),
+  matchMode: z.enum(["first_match", "all_matches"]).optional(),
 });
 
 // Condition operators for rule evaluation

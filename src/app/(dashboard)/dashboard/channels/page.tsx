@@ -41,6 +41,7 @@ import {
   Hash,
   Webhook,
   Link as LinkIcon,
+  Network,
 } from "lucide-react";
 
 interface Channel {
@@ -108,6 +109,13 @@ const channelTypeInfo: Record<
     icon: <Webhook className="h-4 w-4" />,
     fields: [
       { name: "url", label: "Webhook URL", type: "url", placeholder: "https://your-service.com/webhook" },
+    ],
+  },
+  smart_router: {
+    label: "Smart Router",
+    icon: <Network className="h-4 w-4" />,
+    fields: [
+      { name: "url", label: "Router Webhook URL", type: "url", placeholder: "https://router.example.com/api/webhook/abc123" },
     ],
   },
 };

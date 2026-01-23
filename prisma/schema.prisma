@@ -26,10 +26,14 @@ model Webhook {
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   enabled     Boolean      @default(true)
   description String?
+  matchMode   String       @default("first_match") // first_match or all_matches
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   rules       Rule[]
   logs        WebhookLog[]
+  correlationRulesAsSource CorrelationRule[] @relation("SourceWebhook")
+  correlationRulesAsTarget CorrelationRule[] @relation("TargetWebhook")
+  fieldCorrelationRules FieldCorrelationRule[]
 }
 
 model Rule {
@@ -79,4 +83,115 @@ model ServerState {
   lastSeen   DateTime @default(now())
   metadata   String?  // JSON string for additional metadata
   updatedAt  DateTime @updatedAt
+}
+
+model CorrelationRule {
+  id               String            @id @default(cuid())
+  userId           String
+  name             String
+  description      String?
+  enabled          Boolean           @default(true)
+
+  // Source webhook that triggers the correlation
+  sourceWebhookId  String
+  sourceWebhook    Webhook           @relation("SourceWebhook", fields: [sourceWebhookId], references: [id], onDelete: Cascade)
+
+  // Target webhook(s) to wait for
+  targetWebhookId  String
+  targetWebhook    Webhook           @relation("TargetWebhook", fields: [targetWebhookId], references: [id], onDelete: Cascade)
+
+  // Time window in milliseconds to wait for target webhook
+  timeWindowMs     Int               @default(300000) // Default 5 minutes
+
+  // Actions to take when both webhooks received within window
+  actions          String            // JSON string storing action configuration
+
+  // Optional: Actions to take when timeout expires
+  timeoutActions   String?           // JSON string storing timeout action configuration
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  correlationStates CorrelationState[]
+}
+
+model CorrelationState {
+  id                 String          @id @default(cuid())
+  correlationRuleId  String
+  correlationRule    CorrelationRule @relation(fields: [correlationRuleId], references: [id], onDelete: Cascade)
+
+  // Tracking information
+  sourceWebhookId    String
+  sourcePayload      String          // JSON string of source webhook payload
+  sourceReceivedAt   DateTime        @default(now())
+
+  // Target webhook information (populated when received)
+  targetWebhookId    String?
+  targetPayload      String?         // JSON string of target webhook payload
+  targetReceivedAt   DateTime?
+
+  // Status tracking
+  status             String          @default("waiting") // waiting, completed, timeout
+  expiresAt          DateTime        // When the correlation window expires
+
+  // Result tracking
+  actionTriggered    Boolean         @default(false)
+  actionResult       String?         // JSON string of action results
+
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([correlationRuleId, status, expiresAt])
+}
+
+model FieldCorrelationRule {
+  id                String    @id @default(cuid())
+  webhookId         String
+  webhook           Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  name              String
+  enabled           Boolean   @default(true)
+  priority          Int       @default(0)
+  ruleType          String    @default("correlation") // Always "correlation" for this table
+
+  // Correlation configuration
+  correlationField  String              // Field to correlate on (e.g., "server")
+  expectedValues    String              // JSON array: ["server-a", "server-b"]
+  timeWindowMs      Int                 // Time window in milliseconds
+
+  // Conditions that must match on all notifications
+  matchConditions   String              // JSON: ConditionGroup
+
+  // Actions
+  successActions    String              // JSON: RuleAction (when all values received)
+  timeoutActions    String?             // JSON: RuleAction (when timeout, optional)
+
+  debounceMs        Int       @default(0)
+  lastTriggered     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  states            FieldCorrelationState[]
+}
+
+model FieldCorrelationState {
+  id                String    @id @default(cuid())
+  ruleId            String
+  rule              FieldCorrelationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  // Tracking which values have been received
+  receivedValues    String    // JSON: {"server-a": {...payload}, "server-b": {...payload}}
+  pendingValues     String    // JSON: ["server-b"] (what we're still waiting for)
+
+  // Timing
+  firstReceivedAt   DateTime  @default(now())
+  expiresAt         DateTime
+  status            String    @default("waiting") // waiting, completed, timeout
+  actionTriggered   Boolean   @default(false)
+  actionResult      String?   // JSON: result of action
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([ruleId, status, expiresAt])
 }

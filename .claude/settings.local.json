@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(del \"C:\\\\Personal\\\\Code\\\\1-Testing\\\\smartnotificationrouter\\\\prisma.config.ts\")",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npm run prisma:migrate:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(ls:*)",
+      "Bash(npx shadcn@latest add radio-group:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx prisma studio:*)",
+      "Bash(.txt$)",
+      "Bash(PLAN)",
+      "Bash(GUIDE)",
+      "Bash(SUMMARY \")"
+    ]
+  }
+}

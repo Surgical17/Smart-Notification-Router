@@ -25,8 +25,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Webhook as WebhookIcon, Copy, ExternalLink, Trash2 } from "lucide-react";
+import { Plus, Webhook as WebhookIcon, Copy, ExternalLink, Trash2, Zap, Target } from "lucide-react";
 
 interface Webhook {
   id: string;
@@ -34,6 +41,7 @@ interface Webhook {
   uniqueUrl: string;
   description: string | null;
   enabled: boolean;
+  matchMode?: string;
   createdAt: string;
   _count: {
     rules: number;
@@ -46,7 +54,11 @@ export default function WebhooksPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [newWebhook, setNewWebhook] = useState({ name: "", description: "" });
+  const [newWebhook, setNewWebhook] = useState({
+    name: "",
+    description: "",
+    matchMode: "first_match" as "first_match" | "all_matches"
+  });
   const [deleteWebhookId, setDeleteWebhookId] = useState<string | null>(null);
 
   const fetchWebhooks = async () => {
@@ -86,7 +98,7 @@ export default function WebhooksPage() {
         const webhook = await response.json();
         setWebhooks([webhook, ...webhooks]);
         setIsCreateOpen(false);
-        setNewWebhook({ name: "", description: "" });
+        setNewWebhook({ name: "", description: "", matchMode: "first_match" });
         toast.success("Webhook created successfully");
       } else {
         const error = await response.json();
@@ -203,6 +215,48 @@ export default function WebhooksPage() {
                   }
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="matchMode">Rule Matching Mode</Label>
+                <Select
+                  value={newWebhook.matchMode}
+                  onValueChange={(value: "first_match" | "all_matches") =>
+                    setNewWebhook({ ...newWebhook, matchMode: value })
+                  }
+                >
+                  <SelectTrigger id="matchMode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="first_match">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        <div>
+                          <div className="font-medium">First Match</div>
+                          <div className="text-xs text-muted-foreground">
+                            Stop after first matching rule (default)
+                          </div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="all_matches">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        <div>
+                          <div className="font-medium">All Matches</div>
+                          <div className="text-xs text-muted-foreground">
+                            Trigger all matching rules
+                          </div>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {newWebhook.matchMode === "first_match"
+                    ? "Rules are evaluated by priority. Only the first matching rule will trigger."
+                    : "All matching rules will trigger their actions. Useful for multi-team notifications."}
+                </p>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
@@ -253,12 +307,18 @@ export default function WebhooksPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant={webhook.enabled ? "default" : "secondary"}>
                     {webhook.enabled ? "Active" : "Disabled"}
                   </Badge>
                   <Badge variant="outline">{webhook._count.rules} rules</Badge>
                   <Badge variant="outline">{webhook._count.logs} logs</Badge>
+                  {webhook.matchMode === "all_matches" && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Zap className="h-3 w-3" />
+                      All Matches
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 text-sm">
