@@ -21,8 +21,8 @@ COPY . .
 RUN npx prisma generate
 
 # Create initial database with schema (this creates a template db)
-# Set DATABASE_URL for build time only
-ENV DATABASE_URL="file:./prisma/dev.db"
+# Set DATABASE_URL for build time only - use absolute path
+ENV DATABASE_URL="file:/app/prisma/template.db"
 RUN npx prisma db push --accept-data-loss
 
 # Build the application
@@ -55,7 +55,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Copy the pre-built database as a template
-COPY --from=builder /app/prisma/dev.db ./prisma/template.db
+COPY --from=builder /app/prisma/template.db ./prisma/template.db
 
 # Copy startup script
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
