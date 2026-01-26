@@ -21,6 +21,8 @@ COPY . .
 RUN npx prisma generate
 
 # Create initial database with schema (this creates a template db)
+# Set DATABASE_URL for build time only
+ENV DATABASE_URL="file:./prisma/dev.db"
 RUN npx prisma db push --accept-data-loss
 
 # Build the application
