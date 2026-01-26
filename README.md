@@ -19,10 +19,50 @@ A powerful, self-hosted notification routing system built with Next.js 16, featu
 
 ### Docker (Recommended)
 
+#### Option 1: Pull from GitHub Container Registry
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/surgical17/smart-notification-router:main
+
+# Run with environment variables
+docker run -d \
+  -p 3000:3000 \
+  -e DATABASE_URL=file:/app/prisma/dev.db \
+  -e AUTH_SECRET=your-secret-key-here \
+  -e AUTH_URL=http://localhost:3000 \
+  -v smart-router-data:/app/prisma \
+  ghcr.io/surgical17/smart-notification-router:main
+```
+
+#### Option 2: Docker Compose (with pre-built image)
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  smart-notification-router:
+    image: ghcr.io/surgical17/smart-notification-router:main
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:/app/prisma/dev.db
+      - AUTH_SECRET=your-secret-key-here
+      - AUTH_URL=http://localhost:3000
+    volumes:
+      - smart-router-data:/app/prisma
+    restart: unless-stopped
+
+volumes:
+  smart-router-data:
+```
+
+#### Option 3: Build from Source
+
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/smartnotificationrouter.git
-cd smartnotificationrouter
+git clone https://github.com/Surgical17/smart-notification-router.git
+cd smart-notification-router
 
 # Create environment file
 cp .env.example .env
@@ -137,13 +177,25 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - UI components from [shadcn/ui](https://ui.shadcn.com/)
 - Notifications via [Apprise](https://github.com/caronc/apprise)
 
+## 🐳 Docker Image
+
+The official Docker image is automatically built and published via GitHub Actions on every push to `main`.
+
+```bash
+docker pull ghcr.io/surgical17/smart-notification-router:main
+```
+
+**Available tags:**
+- `main` - Latest stable build from main branch
+- `staging` - Development builds from staging branch
+
 ## 📞 Support
 
 For issues, questions, or feature requests:
-- Open an issue on [GitHub](https://github.com/yourusername/smartnotificationrouter/issues)
+- Open an issue on [GitHub](https://github.com/Surgical17/smart-notification-router/issues)
 - Check the [documentation](./FEATURES.md)
 
 ---
 
-**Version**: 0.52.0
+**Version**: 0.6.3
 **Status**: Production Ready 🎉

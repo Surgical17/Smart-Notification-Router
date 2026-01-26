@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.3] - 2026-01-26
+
+### Fixed - TypeScript Build Errors
+
+#### 🔧 Type Safety Improvements
+- Resolved all implicit `any` type errors that prevented production builds under strict type checking
+- Added explicit type annotations to array method callbacks (`.map()`, `.filter()`, `.reduce()`) across multiple files
+- Exported `NotificationResult` interface from notification dispatcher for external use
+- Replaced `any` types in field correlation engine with proper Prisma-inferred types
+- Added type cast for correlation state status field to match union type definition
+- Added local interfaces (`RecentLog`, `WebhookLog`, etc.) for improved component type safety
+
+**Files Modified:**
+- `src/lib/correlation-engine.ts` - Fixed reduce callback types and status union type cast
+- `src/lib/field-correlation-engine.ts` - Replaced `any` with Prisma-inferred types
+- `src/lib/notification-dispatcher.ts` - Exported `NotificationResult` interface
+- `src/app/(dashboard)/dashboard/page.tsx` - Added `RecentLog` interface
+- `src/app/(dashboard)/dashboard/channels/page.tsx` - Added `Channel` type annotations
+- `src/app/(dashboard)/dashboard/logs/page.tsx` - Added `WebhookLog` type annotation
+- `src/app/(dashboard)/dashboard/webhooks/[id]/page.tsx` - Added `Rule` and `CorrelationRule` types
+- `src/app/api/webhook/[uniqueUrl]/route.ts` - Added `NotificationResult` import and types
+- `src/components/rules/unified-rule-builder.tsx` - Added type guards and explicit types
+- `src/components/rules/rule-builder.tsx` - Added type guards and explicit types
+
+### Technical Details
+
+#### TypeScript Patterns Applied
+- Used type inference from Prisma: `type FieldCorrelationRule = NonNullable<Awaited<ReturnType<typeof prisma.fieldCorrelationRule.findFirst>>>`
+- Type guards with predicates: `(c: Condition | ConditionGroup): c is Condition => "field" in c`
+- Explicit reduce callback typing: `(acc: Record<string, number>, item: { status: string; _count: number }) => {...}`
+- Union type casting for Prisma string fields: `status: s.status as "waiting" | "completed" | "timeout"`
+
+#### Build Compatibility
+- Compatible with Next.js 16.1.2 (Turbopack)
+- Prisma 6.19.2
+- Full TypeScript strict mode compliance
+
+### Breaking Changes
+- None! All changes are internal type improvements
+
+---
+
 ## [0.52.0] - 2026-01-23
 
 ### Added - Field-Based Correlation System
