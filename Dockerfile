@@ -20,6 +20,9 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Create initial database with schema (this creates a template db)
+RUN npx prisma db push --accept-data-loss
+
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
@@ -48,13 +51,15 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
-# Copy package.json for prisma to find schema location
-COPY --from=builder /app/package.json ./package.json
+# Copy the pre-built database as a template
+COPY --from=builder /app/prisma/dev.db ./prisma/template.db
 
-# Create data directory for SQLite and set permissions
-RUN mkdir -p /app/data /app/prisma && chown -R nextjs:nodejs /app/data /app/prisma
+# Copy startup script
+COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
+
+# Set permissions
+RUN chown -R nextjs:nodejs /app/prisma
 
 # Set user
 USER nextjs
@@ -69,6 +74,5 @@ ENV HOSTNAME="0.0.0.0"
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-# Start script to run migrations and start the app
-# Use direct path to prisma binary since npx isn't available in standalone mode
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push --skip-generate && node server.js"]
+# Start with entrypoint script
+CMD ["sh", "./docker-entrypoint.sh"]
