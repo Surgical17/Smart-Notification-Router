@@ -661,7 +661,7 @@ export function UnifiedRuleBuilder({
                       {!noValueOperators.includes(condition.operator) && (
                         <Input
                           placeholder="Value"
-                          value={condition.value || ""}
+                          value={String(condition.value ?? "")}
                           onChange={(e) =>
                             updateCondition(index, "value", e.target.value)
                           }
