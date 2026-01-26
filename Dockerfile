@@ -49,13 +49,15 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Copy Prisma schema and generated client
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+# Copy Prisma schema (just the schema file, not the whole directory)
+COPY --from=builder /app/prisma/schema.prisma ./prisma/schema.prisma
 
 # Copy the pre-built database as a template
 COPY --from=builder /app/prisma/template.db ./prisma/template.db
+
+# Copy Prisma generated client
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 # Copy startup script
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
