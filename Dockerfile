@@ -70,4 +70,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 # Start script to run migrations and start the app
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node server.js"]
+# Use direct path to prisma binary since npx isn't available in standalone mode
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push --skip-generate && node server.js"]
