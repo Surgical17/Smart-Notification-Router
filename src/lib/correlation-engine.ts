@@ -120,7 +120,12 @@ async function processAsTargetWebhook(
     // Find waiting correlation states for this rule
     for (const state of rule.correlationStates) {
       // Complete the correlation
-      await completeCorrelation(state.id, webhookId, payload, rule);
+      // Convert null description to undefined for type compatibility
+      const ruleConfig = {
+        ...rule,
+        description: rule.description ?? undefined,
+      };
+      await completeCorrelation(state.id, webhookId, payload, ruleConfig);
     }
   }
 }
