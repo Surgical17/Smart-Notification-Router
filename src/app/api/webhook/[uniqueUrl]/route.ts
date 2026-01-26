@@ -63,11 +63,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Check for server state updates (common pattern in monitoring webhooks)
     if (payload.server || payload.serverName || payload.host) {
       const serverName = String(payload.server || payload.serverName || payload.host);
+      const monitorStatus = (payload.monitor as any)?.status;
       const isOnline = payload.status === "up" ||
                        payload.status === "online" ||
                        payload.state === "up" ||
                        payload.state === "online" ||
-                       payload.monitor?.status === 1;
+                       monitorStatus === 1;
 
       await updateServerState(serverName, isOnline, payload as Record<string, unknown>);
     }
