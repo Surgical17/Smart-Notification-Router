@@ -23,7 +23,10 @@ RUN npx prisma generate
 # Create initial database with schema (this creates a template db)
 # Set DATABASE_URL for build time only - use absolute path
 ENV DATABASE_URL="file:/app/prisma/template.db"
-RUN npx prisma db push --accept-data-loss
+RUN npx prisma db push --accept-data-loss && \
+    echo "=== Verifying template.db was created ===" && \
+    ls -la /app/prisma/ && \
+    test -f /app/prisma/template.db || (echo "ERROR: template.db not found!" && exit 1)
 
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
