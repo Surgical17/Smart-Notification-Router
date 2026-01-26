@@ -237,7 +237,7 @@ export default function WebhookDetailPage({
           prev
             ? {
                 ...prev,
-                rules: prev.rules.map((r) =>
+                rules: prev.rules.map((r: Rule) =>
                   r.id === ruleId ? { ...r, enabled } : r
                 ),
               }
@@ -259,7 +259,7 @@ export default function WebhookDetailPage({
       if (response.ok) {
         setWebhook((prev) =>
           prev
-            ? { ...prev, rules: prev.rules.filter((r) => r.id !== ruleId) }
+            ? { ...prev, rules: prev.rules.filter((r: Rule) => r.id !== ruleId) }
             : null
         );
         toast.success("Rule deleted successfully");
@@ -276,7 +276,7 @@ export default function WebhookDetailPage({
       });
 
       if (response.ok) {
-        setCorrelationRules((prev) => prev.filter((r) => r.id !== ruleId));
+        setCorrelationRules((prev) => prev.filter((r: CorrelationRule) => r.id !== ruleId));
         toast.success("Correlation rule deleted successfully");
       }
     } catch {

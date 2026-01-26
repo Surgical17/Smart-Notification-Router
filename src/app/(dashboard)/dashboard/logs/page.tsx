@@ -234,7 +234,7 @@ export default function LogsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {logs.map((log) => (
+                  {logs.map((log: WebhookLog) => (
                     <TableRow key={log.id}>
                       <TableCell className="font-mono text-sm">
                         {new Date(log.timestamp).toLocaleString()}

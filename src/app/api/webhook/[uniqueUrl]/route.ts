@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { evaluateRule, isRuleDebounced, updateRuleLastTriggered, updateServerState } from "@/lib/rule-engine";
-import { dispatchNotifications } from "@/lib/notification-dispatcher";
+import { dispatchNotifications, NotificationResult } from "@/lib/notification-dispatcher";
 import { processCorrelations } from "@/lib/correlation-engine";
 import { processFieldCorrelations } from "@/lib/field-correlation-engine";
 import { ConditionGroup, RuleAction } from "@/lib/validations/webhook";
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           triggeredRules.push(rule.id);
 
           // Check results
-          const successfulNotifications = results.filter((r) => r.success);
+          const successfulNotifications = results.filter((r: NotificationResult) => r.success);
           const ruleNotificationSent = successfulNotifications.length > 0;
 
           if (ruleNotificationSent) {
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             }
           } else {
             status = "failed";
-            const ruleErrors = results.map((r) => r.error).filter(Boolean).join("; ");
+            const ruleErrors = results.map((r: NotificationResult) => r.error).filter(Boolean).join("; ");
             errorMessage = errorMessage ? `${errorMessage}; ${ruleErrors}` : ruleErrors;
           }
 

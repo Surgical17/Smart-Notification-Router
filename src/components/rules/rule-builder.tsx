@@ -120,7 +120,7 @@ export function RuleBuilder({
         setLogic(parsedConditions.logic);
         setConditions(
           parsedConditions.conditions.filter(
-            (c): c is Condition => "field" in c
+            (c: Condition | ConditionGroup): c is Condition => "field" in c
           )
         );
 
@@ -170,7 +170,7 @@ export function RuleBuilder({
       return;
     }
 
-    const validConditions = conditions.filter((c) => c.field.trim());
+    const validConditions = conditions.filter((c: Condition) => c.field.trim());
     if (validConditions.length === 0) {
       toast.error("At least one condition is required");
       return;

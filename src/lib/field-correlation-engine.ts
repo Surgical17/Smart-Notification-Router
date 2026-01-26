@@ -9,6 +9,9 @@ import { prisma } from "@/lib/prisma";
 import { evaluateConditionGroup } from "./rule-engine";
 import { dispatchNotifications } from "./notification-dispatcher";
 
+// Type inferred from Prisma model
+type FieldCorrelationRule = NonNullable<Awaited<ReturnType<typeof prisma.fieldCorrelationRule.findFirst>>>;
+
 /**
  * Process field correlations when a webhook receives data
  */
@@ -77,7 +80,7 @@ export async function processFieldCorrelations(
  * Process a received value for a correlation rule
  */
 async function processCorrelationValue(
-  rule: any,
+  rule: FieldCorrelationRule,
   fieldValue: string,
   payload: Record<string, unknown>,
   expectedValues: string[]
@@ -123,7 +126,7 @@ async function processCorrelationValue(
     }
   } else {
     // Create new correlation state
-    const receivedValues: Record<string, any> = {
+    const receivedValues: Record<string, Record<string, unknown>> = {
       [fieldValue]: payload,
     };
     const pendingValues = expectedValues.filter((v) => v !== fieldValue);
@@ -153,8 +156,8 @@ async function processCorrelationValue(
  */
 async function completeCorrelation(
   stateId: string,
-  rule: any,
-  receivedValues: Record<string, any>
+  rule: FieldCorrelationRule,
+  receivedValues: Record<string, Record<string, unknown>>
 ): Promise<void> {
   const state = await prisma.fieldCorrelationState.findUnique({
     where: { id: stateId },
@@ -287,15 +290,15 @@ async function cleanupExpiredStates(): Promise<void> {
 /**
  * Get nested value from object using dot notation
  */
-function getNestedValue(obj: any, path: string): any {
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const keys = path.split(".");
-  let current = obj;
+  let current: unknown = obj;
 
   for (const key of keys) {
     if (current === null || current === undefined) {
       return undefined;
     }
-    current = current[key];
+    current = (current as Record<string, unknown>)[key];
   }
 
   return current;

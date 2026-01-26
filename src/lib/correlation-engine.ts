@@ -125,6 +125,14 @@ async function processAsTargetWebhook(
         ...rule,
         description: rule.description ?? undefined,
         timeoutActions: rule.timeoutActions ?? undefined,
+        correlationStates: rule.correlationStates.map((s: typeof rule.correlationStates[number]) => ({
+          ...s,
+          status: s.status as "waiting" | "completed" | "timeout",
+          targetWebhookId: s.targetWebhookId ?? undefined,
+          targetPayload: s.targetPayload ?? undefined,
+          targetReceivedAt: s.targetReceivedAt ?? undefined,
+          actionResult: s.actionResult ?? undefined,
+        })),
       };
       await completeCorrelation(state.id, webhookId, payload, ruleConfig);
     }
@@ -280,14 +288,14 @@ export async function getCorrelationStats(webhookId: string) {
 
   return {
     asSource: asSource.reduce(
-      (acc, item) => {
+      (acc: Record<string, number>, item: { status: string; _count: number }) => {
         acc[item.status] = item._count;
         return acc;
       },
       {} as Record<string, number>
     ),
     asTarget: asTarget.reduce(
-      (acc, item) => {
+      (acc: Record<string, number>, item: { status: string; _count: number }) => {
         acc[item.status] = item._count;
         return acc;
       },

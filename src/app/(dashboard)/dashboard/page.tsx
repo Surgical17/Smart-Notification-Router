@@ -4,6 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Webhook, Bell, ScrollText, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
+interface RecentLog {
+  id: string;
+  timestamp: Date;
+  status: string;
+  notificationSent: boolean;
+  webhook: {
+    name: string;
+  };
+}
+
 async function getDashboardStats(userId: string) {
   const [webhooks, channels, logsToday, recentLogs] = await Promise.all([
     prisma.webhook.count({ where: { userId } }),
@@ -119,7 +129,7 @@ export default async function DashboardPage() {
             </p>
           ) : (
             <div className="space-y-4">
-              {stats.recentLogs.map((log) => (
+              {stats.recentLogs.map((log: RecentLog) => (
                 <div
                   key={log.id}
                   className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0"

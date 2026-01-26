@@ -6,7 +6,7 @@ import { promisify } from "util";
 
 const execAsync = promisify(exec);
 
-interface NotificationResult {
+export interface NotificationResult {
   channelId: string;
   channelName: string;
   success: boolean;

@@ -220,7 +220,7 @@ export default function ChannelsPage() {
 
       if (response.ok) {
         setChannels(
-          channels.map((c) => (c.id === id ? { ...c, enabled } : c))
+          channels.map((c: Channel) => (c.id === id ? { ...c, enabled } : c))
         );
         toast.success(`Channel ${enabled ? "enabled" : "disabled"}`);
       }
@@ -236,7 +236,7 @@ export default function ChannelsPage() {
       });
 
       if (response.ok) {
-        setChannels(channels.filter((c) => c.id !== id));
+        setChannels(channels.filter((c: Channel) => c.id !== id));
         toast.success("Channel deleted successfully");
       }
     } catch {

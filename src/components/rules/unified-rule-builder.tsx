@@ -166,7 +166,7 @@ export function UnifiedRuleBuilder({
         setLogic(parsedConditions.logic);
         setConditions(
           parsedConditions.conditions.filter(
-            (c): c is Condition => "field" in c
+            (c: Condition | ConditionGroup): c is Condition => "field" in c
           )
         );
 
@@ -187,7 +187,7 @@ export function UnifiedRuleBuilder({
         setLogic(parsedMatchConditions.logic);
         setConditions(
           parsedMatchConditions.conditions.filter(
-            (c): c is Condition => "field" in c
+            (c: Condition | ConditionGroup): c is Condition => "field" in c
           )
         );
 
@@ -270,7 +270,7 @@ export function UnifiedRuleBuilder({
       return;
     }
 
-    const validConditions = conditions.filter((c) => c.field.trim());
+    const validConditions = conditions.filter((c: Condition) => c.field.trim());
 
     if (selectedChannels.length === 0) {
       toast.error("At least one notification channel is required");
@@ -711,15 +711,15 @@ export function UnifiedRuleBuilder({
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Notification Channels</Label>
-            {channels.filter((c) => c.enabled).length === 0 ? (
+            {channels.filter((c: Channel) => c.enabled).length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No channels configured. Add a channel first.
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {channels
-                  .filter((c) => c.enabled)
-                  .map((channel) => (
+                  .filter((c: Channel) => c.enabled)
+                  .map((channel: Channel) => (
                     <Badge
                       key={channel.id}
                       variant={
@@ -812,8 +812,8 @@ export function UnifiedRuleBuilder({
                 <Label>Notification Channels</Label>
                 <div className="flex flex-wrap gap-2">
                   {channels
-                    .filter((c) => c.enabled)
-                    .map((channel) => (
+                    .filter((c: Channel) => c.enabled)
+                    .map((channel: Channel) => (
                       <Badge
                         key={channel.id}
                         variant={
