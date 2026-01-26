@@ -55,8 +55,8 @@ COPY --from=builder /app/.next/static ./.next/static
 # Copy Prisma schema (just the schema file, not the whole directory)
 COPY --from=builder /app/prisma/schema.prisma ./prisma/schema.prisma
 
-# Copy the pre-built database as a template
-COPY --from=builder /app/prisma/template.db ./prisma/template.db
+# Copy the pre-built database as a template to /app (NOT /app/prisma which gets overwritten by volume mount)
+COPY --from=builder /app/prisma/template.db ./template.db
 
 # Copy Prisma generated client
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
@@ -65,8 +65,8 @@ COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/clie
 # Copy startup script
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
 
-# Set permissions
-RUN chown -R nextjs:nodejs /app/prisma
+# Set permissions (template.db is now at /app/template.db, prisma dir will be created at runtime)
+RUN chown -R nextjs:nodejs /app/prisma && chown nextjs:nodejs /app/template.db
 
 # Set user
 USER nextjs

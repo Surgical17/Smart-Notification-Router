@@ -9,10 +9,14 @@ DB_PATH="${DB_FILE#file:}"
 echo "Starting Smart Notification Router..."
 echo "Database path: $DB_PATH"
 
+# Ensure prisma directory exists (it may be an empty volume mount)
+mkdir -p /app/prisma
+
 # If database doesn't exist, copy the template
+# Template is stored at /app/template.db (not in /app/prisma which gets overwritten by volume)
 if [ ! -f "$DB_PATH" ]; then
     echo "Database not found. Creating from template..."
-    cp /app/prisma/template.db "$DB_PATH"
+    cp /app/template.db "$DB_PATH"
     echo "Database created successfully."
 else
     echo "Existing database found."
