@@ -37,6 +37,8 @@ yarn-error.log*
 # vercel
 .vercel
 .claude/
+./claude/settings.local.json
+CLAUDE.md
 
 # Database
 *.db

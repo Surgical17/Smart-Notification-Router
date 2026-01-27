@@ -25,7 +25,14 @@
       "Bash(where:*)",
       "Bash(where npm:*)",
       "Bash(cmd /c \"where node && where npm\")",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(npx prisma db push)",
+      "Bash(npx.cmd prisma db push:*)",
+      "Bash(where.exe:*)",
+      "Bash(cmd.exe /c \"cd C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router && npx prisma db push\")",
+      "Bash(cmd.exe /c \"cd /d C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router && npx prisma db push 2>&1\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router''; npx prisma db push 2>&1\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router''; npx next build 2>&1\")"
     ]
   }
 }
