@@ -14,6 +14,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Layers } from "lucide-react";
 import type { Condition, ConditionGroup, ConditionOperator } from "@/lib/validations/webhook";
+import { FieldInput } from "@/components/rules/field-input";
+import { usePayloadFields } from "@/hooks/use-payload-fields";
 
 const OPERATORS: { value: ConditionOperator; label: string; needsValue: boolean }[] = [
   { value: "equals", label: "Equals", needsValue: true },
@@ -41,6 +43,7 @@ interface ConditionBuilderProps {
   depth?: number;
   onRemove?: () => void;
   showRemove?: boolean;
+  webhookId?: string;
 }
 
 function isCondition(item: Condition | ConditionGroup): item is Condition {
@@ -53,8 +56,10 @@ export function ConditionBuilder({
   depth = 0,
   onRemove,
   showRemove = false,
+  webhookId,
 }: ConditionBuilderProps) {
   const maxDepth = 5; // Prevent infinite nesting
+  const { payloadFields, fieldsLoaded } = usePayloadFields(webhookId || "");
 
   const addCondition = () => {
     const newCondition: Condition = {
@@ -156,6 +161,18 @@ export function ConditionBuilder({
           )}
         </div>
 
+        {/* Payload fields hint */}
+        {depth === 0 && payloadFields.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Field suggestions loaded from last received payload. Use dot notation for nested fields (e.g. <code className="bg-muted px-1 rounded">heartbeat.status</code>).
+          </p>
+        )}
+        {depth === 0 && payloadFields.length === 0 && fieldsLoaded && (
+          <p className="text-xs text-muted-foreground">
+            No recent payloads found. Send a test webhook to enable field suggestions. Use dot notation for nested fields (e.g. <code className="bg-muted px-1 rounded">heartbeat.status</code>).
+          </p>
+        )}
+
         {/* Conditions */}
         <div className="space-y-2">
           {group.conditions.map((item, index) => (
@@ -163,13 +180,12 @@ export function ConditionBuilder({
               {isCondition(item) ? (
                 // Render a single condition
                 <div className="flex gap-2 items-start">
-                  <Input
-                    placeholder="Field name"
+                  <FieldInput
                     value={item.field}
-                    onChange={(e) =>
-                      updateCondition(index, { ...item, field: e.target.value })
+                    onChange={(val) =>
+                      updateCondition(index, { ...item, field: val })
                     }
-                    className="flex-1"
+                    payloadFields={payloadFields}
                   />
                   <Select
                     value={item.operator}
@@ -216,6 +232,7 @@ export function ConditionBuilder({
                   depth={depth + 1}
                   onRemove={() => removeCondition(index)}
                   showRemove={true}
+                  webhookId={webhookId}
                 />
               )}
             </div>

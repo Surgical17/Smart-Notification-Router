@@ -61,16 +61,21 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     };
 
     // Check for server state updates (common pattern in monitoring webhooks)
-    if (payload.server || payload.serverName || payload.host) {
-      const serverName = String(payload.server || payload.serverName || payload.host);
-      const monitorStatus = (payload.monitor as any)?.status;
+    // Supports: generic (server/serverName/host), Uptime Kuma (monitor.name + heartbeat.status)
+    const heartbeat = payload.heartbeat as Record<string, unknown> | undefined;
+    const monitor = payload.monitor as Record<string, unknown> | undefined;
+    const serverName = payload.server || payload.serverName || payload.host || monitor?.name;
+
+    if (serverName) {
+      const heartbeatStatus = heartbeat?.status;
       const isOnline = payload.status === "up" ||
                        payload.status === "online" ||
                        payload.state === "up" ||
                        payload.state === "online" ||
-                       monitorStatus === 1;
+                       monitor?.status === 1 ||
+                       heartbeatStatus === 1;
 
-      await updateServerState(serverName, isOnline, payload as Record<string, unknown>);
+      await updateServerState(String(serverName), isOnline, payload as Record<string, unknown>);
     }
 
     // Process field correlations (runs asynchronously, doesn't block immediate rules)

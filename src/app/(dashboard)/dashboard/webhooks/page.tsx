@@ -147,10 +147,26 @@ export default function WebhooksPage() {
     }
   };
 
-  const copyToClipboard = (uniqueUrl: string) => {
+  const copyToClipboard = async (uniqueUrl: string) => {
     const fullUrl = `${window.location.origin}/api/webhook/${uniqueUrl}`;
-    navigator.clipboard.writeText(fullUrl);
-    toast.success("Webhook URL copied to clipboard");
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(fullUrl);
+      } else {
+        // Fallback for non-HTTPS contexts
+        const textarea = document.createElement("textarea");
+        textarea.value = fullUrl;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      toast.success("Webhook URL copied to clipboard");
+    } catch {
+      toast.error("Failed to copy to clipboard");
+    }
   };
 
   if (isLoading) {

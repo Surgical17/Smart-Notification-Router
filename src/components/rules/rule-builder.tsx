@@ -16,8 +16,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Check, ChevronsUpDown, X } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ConditionGroup, Condition, RuleAction } from "@/lib/validations/webhook";
+import { FieldInput } from "@/components/rules/field-input";
+import { usePayloadFields } from "@/hooks/use-payload-fields";
 
 interface Channel {
   id: string;
@@ -96,6 +103,7 @@ export function RuleBuilder({
     "low" | "normal" | "high" | "urgent"
   >("normal");
   const [isSaving, setIsSaving] = useState(false);
+  const { payloadFields, fieldsLoaded } = usePayloadFields(webhookId);
 
   useEffect(() => {
     // Fetch channels
@@ -294,18 +302,30 @@ export function RuleBuilder({
           </Select>
         </div>
 
+        {payloadFields.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Field suggestions loaded from last received payload. Use dot notation for nested fields.
+          </p>
+        )}
+        {payloadFields.length === 0 && fieldsLoaded && (
+          <p className="text-xs text-muted-foreground">
+            Send a test webhook to enable field suggestions. Use dot notation for nested fields (e.g. heartbeat.status).
+          </p>
+        )}
+
         {conditions.map((condition, index) => (
           <Card key={index}>
             <CardContent className="pt-4">
               <div className="flex items-start gap-2">
                 <GripVertical className="h-5 w-5 text-muted-foreground mt-2" />
                 <div className="flex-1 grid grid-cols-3 gap-2">
-                  <Input
-                    placeholder="Field (e.g., status, server)"
+                  <FieldInput
+                    placeholder="Field path (e.g. heartbeat.status)"
                     value={condition.field}
-                    onChange={(e) =>
-                      updateCondition(index, "field", e.target.value)
+                    onChange={(val) =>
+                      updateCondition(index, "field", val)
                     }
+                    payloadFields={payloadFields}
                   />
                   <Select
                     value={condition.operator}
@@ -357,31 +377,74 @@ export function RuleBuilder({
 
         <div className="space-y-2">
           <Label>Notification Channels</Label>
-          <div className="flex flex-wrap gap-2">
-            {channels.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No channels configured.{" "}
-                <a href="/dashboard/channels" className="text-primary hover:underline">
-                  Add a channel
-                </a>
-              </p>
-            ) : (
-              channels.map((channel) => (
-                <Badge
-                  key={channel.id}
-                  variant={
-                    selectedChannels.includes(channel.id)
-                      ? "default"
-                      : "outline"
-                  }
-                  className="cursor-pointer"
-                  onClick={() => toggleChannel(channel.id)}
-                >
-                  {channel.name} ({channel.type})
-                </Badge>
-              ))
-            )}
-          </div>
+          {channels.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No channels configured.{" "}
+              <a href="/dashboard/channels" className="text-primary hover:underline">
+                Add a channel
+              </a>
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                    type="button"
+                  >
+                    {selectedChannels.length === 0
+                      ? "Select channels..."
+                      : `${selectedChannels.length} channel${selectedChannels.length > 1 ? "s" : ""} selected`}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <div className="max-h-60 overflow-y-auto">
+                    {channels.map((channel) => (
+                      <button
+                        key={channel.id}
+                        type="button"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-accent text-left"
+                        onClick={() => toggleChannel(channel.id)}
+                      >
+                        <div className={`flex h-4 w-4 items-center justify-center rounded-sm border ${
+                          selectedChannels.includes(channel.id)
+                            ? "bg-primary border-primary text-primary-foreground"
+                            : "border-muted-foreground"
+                        }`}>
+                          {selectedChannels.includes(channel.id) && (
+                            <Check className="h-3 w-3" />
+                          )}
+                        </div>
+                        <span>{channel.name}</span>
+                        <span className="ml-auto text-xs text-muted-foreground">{channel.type}</span>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              {selectedChannels.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {selectedChannels.map((channelId) => {
+                    const channel = channels.find((c) => c.id === channelId);
+                    return channel ? (
+                      <Badge key={channelId} variant="secondary" className="gap-1">
+                        {channel.name}
+                        <button
+                          type="button"
+                          onClick={() => toggleChannel(channelId)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">

@@ -42,10 +42,20 @@ async function evaluateCondition(
 
   switch (operator) {
     case "equals":
-      return fieldValue === value;
+      // Strict match first, then try type-coerced comparison
+      // This handles cases where payload has number 0 but rule value is string "0"
+      if (fieldValue === value) return true;
+      if (fieldValue !== null && fieldValue !== undefined && value !== null && value !== undefined) {
+        return String(fieldValue) === String(value);
+      }
+      return false;
 
     case "not_equals":
-      return fieldValue !== value;
+      if (fieldValue === value) return false;
+      if (fieldValue !== null && fieldValue !== undefined && value !== null && value !== undefined) {
+        return String(fieldValue) !== String(value);
+      }
+      return true;
 
     case "contains":
       if (typeof fieldValue === "string" && typeof value === "string") {
@@ -77,17 +87,29 @@ async function evaluateCondition(
       }
       return false;
 
-    case "greater_than":
-      return typeof fieldValue === "number" && typeof value === "number" && fieldValue > value;
+    case "greater_than": {
+      const numField = typeof fieldValue === "number" ? fieldValue : Number(fieldValue);
+      const numValue = typeof value === "number" ? value : Number(value);
+      return !isNaN(numField) && !isNaN(numValue) && numField > numValue;
+    }
 
-    case "less_than":
-      return typeof fieldValue === "number" && typeof value === "number" && fieldValue < value;
+    case "less_than": {
+      const numField = typeof fieldValue === "number" ? fieldValue : Number(fieldValue);
+      const numValue = typeof value === "number" ? value : Number(value);
+      return !isNaN(numField) && !isNaN(numValue) && numField < numValue;
+    }
 
-    case "greater_than_or_equal":
-      return typeof fieldValue === "number" && typeof value === "number" && fieldValue >= value;
+    case "greater_than_or_equal": {
+      const numField = typeof fieldValue === "number" ? fieldValue : Number(fieldValue);
+      const numValue = typeof value === "number" ? value : Number(value);
+      return !isNaN(numField) && !isNaN(numValue) && numField >= numValue;
+    }
 
-    case "less_than_or_equal":
-      return typeof fieldValue === "number" && typeof value === "number" && fieldValue <= value;
+    case "less_than_or_equal": {
+      const numField = typeof fieldValue === "number" ? fieldValue : Number(fieldValue);
+      const numValue = typeof value === "number" ? value : Number(value);
+      return !isNaN(numField) && !isNaN(numValue) && numField <= numValue;
+    }
 
     case "is_empty":
       return (

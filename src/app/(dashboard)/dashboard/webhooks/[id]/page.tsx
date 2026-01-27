@@ -46,6 +46,7 @@ import {
   Target,
   Zap,
   Network,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { UnifiedRuleBuilder } from "@/components/rules/unified-rule-builder";
@@ -123,6 +124,8 @@ export default function WebhookDetailPage({
   const [editingRule, setEditingRule] = useState<Rule | null>(null);
   const [correlationRules, setCorrelationRules] = useState<CorrelationRule[]>([]);
   const [editingCorrelationRule, setEditingCorrelationRule] = useState<CorrelationRule | null>(null);
+  const [activeTab, setActiveTab] = useState("settings");
+  const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
 
   const fetchWebhook = async () => {
     try {
@@ -175,6 +178,23 @@ export default function WebhookDetailPage({
     fetchLogs();
     fetchCorrelationRules();
   }, [id]);
+
+  // Auto-refresh logs every 10 seconds when on the logs tab
+  useEffect(() => {
+    if (activeTab !== "logs") return;
+
+    const interval = setInterval(() => {
+      fetchLogs();
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [activeTab, id]);
+
+  const handleRefreshLogs = async () => {
+    setIsRefreshingLogs(true);
+    await fetchLogs();
+    setIsRefreshingLogs(false);
+  };
 
   const handleSave = async () => {
     if (!editForm.name.trim()) {
@@ -292,11 +312,27 @@ export default function WebhookDetailPage({
     fetchCorrelationRules();
   };
 
-  const copyToClipboard = () => {
+  const copyToClipboard = async () => {
     if (!webhook) return;
     const fullUrl = `${window.location.origin}/api/webhook/${webhook.uniqueUrl}`;
-    navigator.clipboard.writeText(fullUrl);
-    toast.success("Webhook URL copied to clipboard");
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(fullUrl);
+      } else {
+        // Fallback for non-HTTPS contexts
+        const textarea = document.createElement("textarea");
+        textarea.value = fullUrl;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      toast.success("Webhook URL copied to clipboard");
+    } catch {
+      toast.error("Failed to copy to clipboard");
+    }
   };
 
   if (isLoading) {
@@ -337,7 +373,7 @@ export default function WebhookDetailPage({
         </div>
       </div>
 
-      <Tabs defaultValue="settings" className="space-y-4">
+      <Tabs defaultValue="settings" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="settings">
             <Settings className="mr-2 h-4 w-4" />
@@ -654,10 +690,23 @@ export default function WebhookDetailPage({
         <TabsContent value="logs" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Webhook Logs</CardTitle>
-              <CardDescription>
-                Last 20 webhook requests received
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Recent Webhook Logs</CardTitle>
+                  <CardDescription>
+                    Last 20 webhook requests received — auto-refreshes every 10s
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefreshLogs}
+                  disabled={isRefreshingLogs}
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshingLogs ? "animate-spin" : ""}`} />
+                  Refresh
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {logs.length === 0 ? (
