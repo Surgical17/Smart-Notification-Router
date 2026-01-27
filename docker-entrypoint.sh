@@ -6,7 +6,7 @@ DB_FILE="${DATABASE_URL:-file:/app/prisma/dev.db}"
 # Extract just the path (remove 'file:' prefix)
 DB_PATH="${DB_FILE#file:}"
 
-echo "Starting Smart Notification Router..."
+echo "Starting SNR - Smart Notification Router..."
 echo "Database path: $DB_PATH"
 
 # Ensure prisma directory exists (it may be an empty volume mount)
@@ -21,6 +21,10 @@ if [ ! -f "$DB_PATH" ]; then
 else
     echo "Existing database found."
 fi
+
+# Run schema migrations to ensure database is up to date
+echo "Running schema migration..."
+node ./node_modules/prisma/build/index.js db push --skip-generate --accept-data-loss 2>&1 || echo "Warning: Schema migration failed, continuing anyway..."
 
 # Start the application
 echo "Starting Next.js server..."

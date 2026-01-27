@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Smart Notification Router",
+  title: "SNR - Smart Notification Router",
   description: "Route and manage notifications from monitoring systems with conditional logic",
 };
 

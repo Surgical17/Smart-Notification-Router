@@ -15,7 +15,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Bell } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import Image from "next/image";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -74,13 +75,17 @@ export default function RegisterPage() {
     <Card>
       <CardHeader className="space-y-1">
         <div className="flex items-center justify-center mb-4">
-          <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center">
-            <Bell className="h-6 w-6 text-primary-foreground" />
-          </div>
+          <Image
+            src="/SNR Logo.png"
+            alt="SNR"
+            width={72}
+            height={72}
+            className="rounded-xl"
+          />
         </div>
         <CardTitle className="text-2xl text-center">Create an account</CardTitle>
         <CardDescription className="text-center">
-          Get started with your notification router
+          Get started with SNR - Smart Notification Router
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

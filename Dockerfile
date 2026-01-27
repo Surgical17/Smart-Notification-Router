@@ -58,9 +58,15 @@ COPY --from=builder /app/prisma/schema.prisma ./prisma/schema.prisma
 # Copy the pre-built database as a template to /app (NOT /app/prisma which gets overwritten by volume mount)
 COPY --from=builder /app/prisma/template.db ./template.db
 
-# Copy Prisma generated client
+# Copy Prisma generated client and CLI (CLI needed for runtime schema migrations)
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+
+# Copy utility scripts
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
 
 # Copy startup script
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh

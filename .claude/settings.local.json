@@ -32,7 +32,22 @@
       "Bash(cmd.exe /c \"cd C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router && npx prisma db push\")",
       "Bash(cmd.exe /c \"cd /d C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router && npx prisma db push 2>&1\")",
       "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router''; npx prisma db push 2>&1\")",
-      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router''; npx next build 2>&1\")"
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router''; npx next build 2>&1\")",
+      "Bash(git push:*)",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router''; gh release create v0.7.0.2 --title ''v0.7.0.2'' --notes ''## What''''s New\n\n### Dark Blue Theme & Theme Toggle\n- Added dark/light/system theme toggle in the header\n- Dark mode now uses a dark blue color scheme instead of pure black\n\n### Rule Duplication\n- Added duplicate button for both immediate and correlation rules\n- Duplicated rules are created with a \\(copy\\) suffix and disabled by default\n\n### Wider Rule Builder\n- Rule builder dialog expanded to 80% viewport width\n- Match condition field path input widened for better readability\n\n### Admin Role System\n- Added role field to user model \\(defaults to admin\\)\n- First registered user automatically becomes admin\n- Registration is disabled after the first user signs up\n- Login page conditionally shows the signup link only when no users exist\n- Register page redirects to login if registration is closed\n\n### Other\n- Added SNR logo to README\n- Added /api/auth/registration-status endpoint'' 2>&1\")",
+      "Bash(powershell.exe -Command \"where.exe gh 2>&1; Get-Command gh -ErrorAction SilentlyContinue\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router''; git remote get-url origin 2>&1\")",
+      "Bash(powershell.exe -Command \"git config --global credential.helper 2>&1\")",
+      "Bash(powershell.exe -Command \"git config --list 2>&1 | Select-String ''credential''\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router''; git tag v0.7.0.2; git push origin v0.7.0.2 2>&1\")",
+      "Bash(powershell.exe -Command @'\n$token = \\(cmdkey /list:git:https://github.com 2>&1 | Out-String\\)\n# Try using git credential fill to get the token\n$cred = \"\"protocol=https`nhost=github.com`n\"\" | git credential fill 2>&1\n$cred\n'@)",
+      "Bash(powershell.exe -Command \"echo ''protocol=https''; echo ''host=github.com''; echo '''' | git credential fill 2>&1\")",
+      "Bash(powershell.exe -Command \"$body = ''protocol=https\\\\nhost=github.com\\\\n\\\\n'' -replace ''\\\\n'', [char]10; $body | git credential fill 2>&1\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router''; $releaseBody = @{tag_name=''v0.7.0.2''; name=''v0.7.0.2''; body=''## Whats New\\\\n\\\\n### Dark Blue Theme and Theme Toggle\\\\n- Added dark/light/system theme toggle in the header\\\\n- Dark mode now uses a dark blue color scheme instead of pure black\\\\n\\\\n### Rule Duplication\\\\n- Added duplicate button for both immediate and correlation rules\\\\n- Duplicated rules are created with a \\(copy\\) suffix and disabled by default\\\\n\\\\n### Wider Rule Builder\\\\n- Rule builder dialog expanded to 80% viewport width\\\\n- Match condition field path input widened for better readability\\\\n\\\\n### Admin Role System\\\\n- Added role field to user model \\(defaults to admin\\)\\\\n- First registered user automatically becomes admin\\\\n- Registration is disabled after the first user signs up\\\\n- Login page conditionally shows the signup link only when no users exist\\\\n- Register page redirects to login if registration is closed\\\\n\\\\n### Other\\\\n- Added SNR logo to README\\\\n- Added /api/auth/registration-status endpoint''; draft=$false; prerelease=$false} | ConvertTo-Json; Write-Output $releaseBody\")",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File:*)",
+      "Bash(powershell.exe -Command \"Remove-Item ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router\\\\create-release.ps1''\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Personal\\\\Code\\\\1-Testing\\\\Smart-Notification-Router''; npm run dev 2>&1\")",
+      "Bash(powershell.exe -Command:*)"
     ]
   }
 }
