@@ -13,7 +13,14 @@
       "Bash(.txt$)",
       "Bash(PLAN)",
       "Bash(GUIDE)",
-      "Bash(SUMMARY \")"
+      "Bash(SUMMARY \")",
+      "Bash(npx tsc:*)",
+      "Bash(node_modules/.bin/tsc:*)",
+      "Bash(cmd.exe /c \"npx tsc --noEmit 2>&1\")",
+      "Bash(cmd.exe /c \"npx tsc --noEmit\")",
+      "Bash(git status:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
