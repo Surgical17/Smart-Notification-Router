@@ -319,6 +319,10 @@ export function UnifiedRuleBuilder({
       }
     }
 
+    // Detect if user switched rule type while editing
+    const isTypeSwitch =
+      (ruleType === "correlation" && rule) || (ruleType === "immediate" && correlationRule);
+
     setIsSaving(true);
     try {
       if (ruleType === "immediate") {
@@ -335,10 +339,12 @@ export function UnifiedRuleBuilder({
           priority: notificationPriority,
         };
 
-        const url = rule
+        // If switching from correlation -> immediate, always create new
+        const isUpdate = rule && !isTypeSwitch;
+        const url = isUpdate
           ? `/api/rules/${rule.id}`
           : `/api/webhooks/${webhookId}/rules`;
-        const method = rule ? "PATCH" : "POST";
+        const method = isUpdate ? "PATCH" : "POST";
 
         const response = await fetch(url, {
           method,
@@ -354,7 +360,11 @@ export function UnifiedRuleBuilder({
         });
 
         if (response.ok) {
-          toast.success(rule ? "Rule updated successfully" : "Rule created successfully");
+          // If switching type, delete the old correlation rule
+          if (isTypeSwitch && correlationRule) {
+            await fetch(`/api/correlation-rules/${correlationRule.id}`, { method: "DELETE" });
+          }
+          toast.success(isUpdate ? "Rule updated successfully" : "Rule created successfully");
           onSave();
         } else {
           const error = await response.json();
@@ -385,10 +395,12 @@ export function UnifiedRuleBuilder({
 
         const validValues = expectedValues.filter((v) => v.trim());
 
-        const url = correlationRule
+        // If switching from immediate -> correlation, always create new
+        const isUpdate = correlationRule && !isTypeSwitch;
+        const url = isUpdate
           ? `/api/correlation-rules/${correlationRule.id}`
           : `/api/webhooks/${webhookId}/correlation-rules`;
-        const method = correlationRule ? "PATCH" : "POST";
+        const method = isUpdate ? "PATCH" : "POST";
 
         const response = await fetch(url, {
           method,
@@ -408,8 +420,12 @@ export function UnifiedRuleBuilder({
         });
 
         if (response.ok) {
+          // If switching type, delete the old immediate rule
+          if (isTypeSwitch && rule) {
+            await fetch(`/api/rules/${rule.id}`, { method: "DELETE" });
+          }
           toast.success(
-            correlationRule ? "Correlation rule updated successfully" : "Correlation rule created successfully"
+            isUpdate ? "Correlation rule updated successfully" : "Correlation rule created successfully"
           );
           onSave();
         } else {
@@ -426,52 +442,55 @@ export function UnifiedRuleBuilder({
 
   return (
     <div className="space-y-6">
-      {/* Rule Type Selection (only show when creating new) */}
-      {!rule && !correlationRule && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Rule Type</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RadioGroup
-              value={ruleType}
-              onValueChange={(value: "immediate" | "correlation") => setRuleType(value)}
-              className="grid grid-cols-2 gap-4"
+      {/* Rule Type Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Rule Type</CardTitle>
+          {(rule || correlationRule) && (
+            <p className="text-sm text-muted-foreground">
+              Changing rule type will create a new rule and delete the existing one
+            </p>
+          )}
+        </CardHeader>
+        <CardContent>
+          <RadioGroup
+            value={ruleType}
+            onValueChange={(value: "immediate" | "correlation") => setRuleType(value)}
+            className="grid grid-cols-2 gap-4"
+          >
+            <Label
+              htmlFor="immediate"
+              className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${
+                ruleType === "immediate" ? "border-primary" : ""
+              }`}
             >
-              <Label
-                htmlFor="immediate"
-                className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${
-                  ruleType === "immediate" ? "border-primary" : ""
-                }`}
-              >
-                <RadioGroupItem value="immediate" id="immediate" className="sr-only" />
-                <Zap className="mb-3 h-6 w-6" />
-                <div className="space-y-1 text-center">
-                  <p className="text-sm font-medium leading-none">Immediate Rule</p>
-                  <p className="text-xs text-muted-foreground">
-                    Trigger instantly when conditions match
-                  </p>
-                </div>
-              </Label>
-              <Label
-                htmlFor="correlation"
-                className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${
-                  ruleType === "correlation" ? "border-primary" : ""
-                }`}
-              >
-                <RadioGroupItem value="correlation" id="correlation" className="sr-only" />
-                <Clock className="mb-3 h-6 w-6" />
-                <div className="space-y-1 text-center">
-                  <p className="text-sm font-medium leading-none">Correlation Rule</p>
-                  <p className="text-xs text-muted-foreground">
-                    Wait for multiple sources within time window
-                  </p>
-                </div>
-              </Label>
-            </RadioGroup>
-          </CardContent>
-        </Card>
-      )}
+              <RadioGroupItem value="immediate" id="immediate" className="sr-only" />
+              <Zap className="mb-3 h-6 w-6" />
+              <div className="space-y-1 text-center">
+                <p className="text-sm font-medium leading-none">Immediate Rule</p>
+                <p className="text-xs text-muted-foreground">
+                  Trigger instantly when conditions match
+                </p>
+              </div>
+            </Label>
+            <Label
+              htmlFor="correlation"
+              className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer ${
+                ruleType === "correlation" ? "border-primary" : ""
+              }`}
+            >
+              <RadioGroupItem value="correlation" id="correlation" className="sr-only" />
+              <Clock className="mb-3 h-6 w-6" />
+              <div className="space-y-1 text-center">
+                <p className="text-sm font-medium leading-none">Correlation Rule</p>
+                <p className="text-xs text-muted-foreground">
+                  Wait for multiple sources within time window
+                </p>
+              </div>
+            </Label>
+          </RadioGroup>
+        </CardContent>
+      </Card>
 
       {/* Basic Info */}
       <Card>
@@ -539,11 +558,11 @@ export function UnifiedRuleBuilder({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="correlation-field">Field to Correlate</Label>
-                <Input
-                  id="correlation-field"
+                <FieldInput
                   placeholder="e.g., server, host, source"
                   value={correlationField}
-                  onChange={(e) => setCorrelationField(e.target.value)}
+                  onChange={(val) => setCorrelationField(val)}
+                  payloadFields={payloadFields}
                 />
                 <p className="text-sm text-muted-foreground">
                   The field in payload to track
