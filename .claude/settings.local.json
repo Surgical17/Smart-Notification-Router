@@ -20,7 +20,12 @@
       "Bash(cmd.exe /c \"npx tsc --noEmit\")",
       "Bash(git status:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npx next build)",
+      "Bash(where:*)",
+      "Bash(where npm:*)",
+      "Bash(cmd /c \"where node && where npm\")",
+      "Bash(powershell -Command:*)"
     ]
   }
 }

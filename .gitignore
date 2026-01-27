@@ -36,7 +36,7 @@ yarn-error.log*
 
 # vercel
 .vercel
-.claude
+.claude/
 
 # Database
 *.db
