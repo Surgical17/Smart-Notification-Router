@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft,
   Copy,
+  CopyPlus,
   Save,
   Plus,
   Trash2,
@@ -304,6 +305,66 @@ export default function WebhookDetailPage({
     }
   };
 
+  const handleDuplicateRule = async (rule: Rule) => {
+    try {
+      const conditions = JSON.parse(rule.conditions);
+      const actions = JSON.parse(rule.actions);
+      const response = await fetch(`/api/webhooks/${id}/rules`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${rule.name} (copy)`,
+          conditions,
+          actions,
+          priority: rule.priority,
+          enabled: false,
+          debounceMs: rule.debounceMs,
+        }),
+      });
+      if (response.ok) {
+        toast.success("Rule duplicated successfully");
+        fetchWebhook();
+      } else {
+        toast.error("Failed to duplicate rule");
+      }
+    } catch {
+      toast.error("Failed to duplicate rule");
+    }
+  };
+
+  const handleDuplicateCorrelationRule = async (rule: CorrelationRule) => {
+    try {
+      const matchConditions = JSON.parse(rule.matchConditions);
+      const successActions = JSON.parse(rule.successActions);
+      const timeoutActions = rule.timeoutActions ? JSON.parse(rule.timeoutActions) : null;
+      const expectedValues = JSON.parse(rule.expectedValues);
+      const response = await fetch(`/api/webhooks/${id}/correlation-rules`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: `${rule.name} (copy)`,
+          correlationField: rule.correlationField,
+          expectedValues,
+          timeWindowMs: rule.timeWindowMs,
+          matchConditions,
+          successActions,
+          timeoutActions,
+          priority: rule.priority,
+          enabled: false,
+          debounceMs: rule.debounceMs,
+        }),
+      });
+      if (response.ok) {
+        toast.success("Correlation rule duplicated successfully");
+        fetchCorrelationRules();
+      } else {
+        toast.error("Failed to duplicate correlation rule");
+      }
+    } catch {
+      toast.error("Failed to duplicate correlation rule");
+    }
+  };
+
   const handleRuleSaved = () => {
     setIsRuleBuilderOpen(false);
     setEditingRule(null);
@@ -567,6 +628,14 @@ export default function WebhookDetailPage({
                         >
                           <Settings className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDuplicateRule(rule)}
+                          title="Duplicate rule"
+                        >
+                          <CopyPlus className="h-4 w-4" />
+                        </Button>
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
@@ -652,6 +721,14 @@ export default function WebhookDetailPage({
                               }}
                             >
                               Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDuplicateCorrelationRule(rule)}
+                              title="Duplicate rule"
+                            >
+                              <CopyPlus className="h-4 w-4" />
                             </Button>
                             <Dialog>
                               <DialogTrigger asChild>
@@ -796,7 +873,7 @@ export default function WebhookDetailPage({
       </Tabs>
 
       <Dialog open={isRuleBuilderOpen} onOpenChange={setIsRuleBuilderOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[80vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingRule || editingCorrelationRule ? "Edit Rule" : "Create Rule"}

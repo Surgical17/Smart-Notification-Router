@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/SNR Logo.png" alt="Smart Notification Router" width="200" />
+</p>
+
 # Smart Notification Router
 
 A powerful, self-hosted notification routing system built with Next.js 16, featuring intelligent rule-based routing, field correlation, and multi-channel delivery.
@@ -197,5 +201,5 @@ For issues, questions, or feature requests:
 
 ---
 
-**Version**: 0.6.3
-**Status**: Production Ready 🎉
+**Version**: 0.7.0.2
+**Status**: Production Ready

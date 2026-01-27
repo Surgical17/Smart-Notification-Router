@@ -667,7 +667,7 @@ export function UnifiedRuleBuilder({
               <Card key={index}>
                 <CardContent className="pt-4">
                   <div className="grid grid-cols-12 gap-2">
-                    <div className="col-span-4">
+                    <div className="col-span-5">
                       <FieldInput
                         placeholder="Field path (e.g. heartbeat.status)"
                         value={condition.field}
@@ -696,7 +696,7 @@ export function UnifiedRuleBuilder({
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="col-span-4">
+                    <div className="col-span-3">
                       {!noValueOperators.includes(condition.operator) && (
                         <Input
                           placeholder="Value"
