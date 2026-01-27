@@ -667,7 +667,7 @@ export function UnifiedRuleBuilder({
               <Card key={index}>
                 <CardContent className="pt-4">
                   <div className="grid grid-cols-12 gap-2">
-                    <div className="col-span-5">
+                    <div className="col-span-6">
                       <FieldInput
                         placeholder="Field path (e.g. heartbeat.status)"
                         value={condition.field}
@@ -677,7 +677,7 @@ export function UnifiedRuleBuilder({
                         payloadFields={payloadFields}
                       />
                     </div>
-                    <div className="col-span-3">
+                    <div className="col-span-2">
                       <Select
                         value={condition.operator}
                         onValueChange={(value) =>

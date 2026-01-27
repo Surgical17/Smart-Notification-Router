@@ -873,7 +873,7 @@ export default function WebhookDetailPage({
       </Tabs>
 
       <Dialog open={isRuleBuilderOpen} onOpenChange={setIsRuleBuilderOpen}>
-        <DialogContent className="max-w-[80vw] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingRule || editingCorrelationRule ? "Edit Rule" : "Create Rule"}
